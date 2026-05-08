@@ -47,6 +47,7 @@ export function CommitmentsClient({
   highlightId,
 }: CommitmentsClientProps) {
   const [commitments, setCommitments] = useState<Node[]>(() => [...initialCommitments]);
+  const [goalSpacesList, setGoalSpacesList] = useState<Node[]>(() => [...goalSpaces]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addTitle, setAddTitle] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
@@ -82,7 +83,7 @@ export function CommitmentsClient({
   }
 
   const goalSpaceOnlyCommitments: Record<string, readonly Node[]> = {};
-  for (const gs of goalSpaces) {
+  for (const gs of goalSpacesList) {
     const gsCommitments = commitmentsByGoalSpace[gs.id] ?? [];
     goalSpaceOnlyCommitments[gs.id] = gsCommitments.filter(c => !linkedCommitmentIds.has(c.id));
   }
@@ -158,6 +159,12 @@ export function CommitmentsClient({
     }));
   }, []);
 
+  const handleDeleteGoal = useCallback(async (id: string) => {
+    const res = await fetch(`/api/nodes/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete');
+    setGoalSpacesList(prev => prev.filter(gs => gs.id !== id));
+  }, []);
+
   const handleAddOutcome = useCallback(async (goalSpaceId: string, title: string) => {
     const nodeRes = await fetch('/api/graph/nodes', {
       method: 'POST',
@@ -180,7 +187,7 @@ export function CommitmentsClient({
     }));
   }, []);
 
-  const isEmpty = goalSpaces.length === 0 && commitments.length === 0;
+  const isEmpty = goalSpacesList.length === 0 && commitments.length === 0;
 
   return (
     <div>
@@ -211,7 +218,7 @@ export function CommitmentsClient({
         <p className="text-sm text-gray-500 dark:text-gray-600">No commitments yet.</p>
       ) : (
         <>
-          {goalSpaces.map(gs => (
+          {goalSpacesList.map(gs => (
             <div key={gs.id} id={`gs-${gs.id}`}>
               <GoalSpaceSection
                 goalSpace={gs}
@@ -239,6 +246,7 @@ export function CommitmentsClient({
                 onCancelEdit={() => setEditingId(null)}
                 onAddOutcome={(title) => handleAddOutcome(gs.id, title)}
                 onAddCommitment={handleAddCommitment}
+                onDelete={handleDeleteGoal}
               />
             </div>
           ))}

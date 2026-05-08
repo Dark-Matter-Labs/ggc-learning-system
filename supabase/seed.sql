@@ -1,13 +1,20 @@
 INSERT INTO node_types (id, label, description, color, sort_order) VALUES
-  ('hunch', 'Hunch', 'A directional belief about how the world works', '#7F77DD', 1),
-  ('assumption_background', 'Background Assumption', 'Contextual given — not directly testable, but challengeable', '#1D9E75', 2),
-  ('assumption_foreground', 'Foreground Assumption', 'Testable if/then proposition derived from a hunch', '#D85A30', 3),
-  ('test', 'Test', 'A specific action to validate or challenge an assumption', '#D4537E', 4),
-  ('learning', 'Learning', 'What was learned from a test — may spawn new hunches', '#378ADD', 5),
-  ('option', 'Option', 'A COF investment option or strategic bet', '#BA7517', 6),
-  ('person', 'Person', 'An individual in the network', '#888780', 7),
-  ('organisation', 'Organisation', 'An organisation, fund, or institution', '#888780', 8),
-  ('site', 'Site', 'A geographical site or context', '#639922', 9);
+  -- Context model
+  ('hunch',        'Hunch',         'A directional belief about how governance change happens',            '#7F77DD', 1),
+  ('assumption',   'Assumption',    'A testable proposition an experiment depends on',                    '#1D9E75', 2),
+  ('signal',       'Signal',        'A raw observation from reality',                                     '#A32D2D', 3),
+  ('friction',     'Friction',      'A specific blocker, tension, or resistance',                         '#D85A30', 4),
+  ('learning',     'Learning',      'A synthesised insight derived from signals and frictions',           '#378ADD', 5),
+  -- Commitment model
+  ('experiment',   'Experiment',    'A structured unit of inquiry',                                       '#0F6E56', 6),
+  ('outcome',      'Outcome',       'A specific intended outcome of an experiment',                       '#085041', 7),
+  ('commitment',   'Commitment',    'Individual or organisational commitment from the social contract',   '#185FA5', 8),
+  ('intervention', 'Intervention',  'A concrete change implemented — new ritual, role, or process',      '#BA7517', 9),
+  ('decision',     'Decision',      'A choice or direction taken, distinct from its implementation',     '#D4537E', 10),
+  -- Entity model
+  ('person',       'Person',        'Anyone in the organisation',                                         '#888780', 11),
+  -- Utility
+  ('meeting_notes','Meeting Notes', 'A call or meeting transcript — extracts multiple nodes',             '#888780', 12);
 
 INSERT INTO edge_types (id, label, is_directional) VALUES
   ('supports', 'Supports', true),

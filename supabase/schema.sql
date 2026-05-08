@@ -129,3 +129,8 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER nodes_updated_at
   BEFORE UPDATE ON nodes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Role grants (required for anon/authenticated to access public schema tables)
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;

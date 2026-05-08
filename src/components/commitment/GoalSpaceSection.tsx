@@ -28,6 +28,7 @@ interface GoalSpaceSectionProps {
   readonly onCancelEdit?: () => void;
   readonly onAddOutcome?: (title: string) => Promise<void>;
   readonly onAddCommitment?: (outcomeId: string, title: string) => Promise<void>;
+  readonly onDelete?: (id: string) => Promise<void>;
 }
 
 export function GoalSpaceSection({
@@ -47,8 +48,11 @@ export function GoalSpaceSection({
   onCancelEdit,
   onAddOutcome,
   onAddCommitment,
+  onDelete,
 }: GoalSpaceSectionProps) {
   const [expanded, setExpanded] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [convergenceData, setConvergenceData] = useState<ConvergenceData | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addTitle, setAddTitle] = useState('');
@@ -114,24 +118,68 @@ export function GoalSpaceSection({
     }
   };
 
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(goalSpace.id);
+    } finally {
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
   return (
-    <div className="border-b border-gray-200/80 dark:border-gray-800/50">
+    <div className="border-b border-gray-200/80 dark:border-gray-800/50 group">
       {/* Goal space header */}
-      <button
-        type="button"
-        onClick={() => setExpanded(prev => !prev)}
-        className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-100/80 dark:hover:bg-gray-900/50 transition-colors"
-      >
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100/80 dark:hover:bg-gray-900/50 transition-colors">
+        <button
+          type="button"
+          onClick={() => setExpanded(prev => !prev)}
+          className="flex items-center gap-1.5 min-w-0 flex-1"
+        >
           <span className="text-[10px] text-gray-500">{expanded ? '\u25BC' : '\u25B6'}</span>
           <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-300 truncate">{goalSpace.title}</span>
+        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {onDelete && (
+            confirmDelete ? (
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] text-gray-400">Delete?</span>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="text-[9px] text-red-400 hover:text-red-600 disabled:opacity-40"
+                >
+                  {isDeleting ? '\u2026' : 'Yes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-[9px] text-gray-400 hover:text-gray-600"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="text-[10px] text-gray-300 dark:text-gray-700 hover:text-red-400 dark:hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Delete goal"
+              >
+                \u2715
+              </button>
+            )
+          )}
+          <TrajectoryBadge
+            status={trajectoryStatus}
+            score={trajectoryScore}
+            factorBreakdown={trajectoryBreakdown}
+          />
         </div>
-        <TrajectoryBadge
-          status={trajectoryStatus}
-          score={trajectoryScore}
-          factorBreakdown={trajectoryBreakdown}
-        />
-      </button>
+      </div>
 
       {/* Expanded content */}
       {expanded && (
