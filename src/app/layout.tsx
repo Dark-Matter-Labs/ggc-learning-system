@@ -57,14 +57,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){var d=document.documentElement;if(window.matchMedia('(prefers-color-scheme: dark)').matches){d.classList.add('dark')}else{d.classList.remove('dark')}})();`,
-          }}
-        />
-      </head>
+    <html lang="en" className="dark">
       <body
         className={`${inter.variable} ${crimsonPro.variable} ${dmMono.variable} font-body antialiased`}
         style={{ background: 'var(--color-bg)', color: 'var(--color-text-primary)' }}

@@ -28,7 +28,7 @@ export function SetupWizardClient() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-cof-bg flex flex-col">
       <div
         role="progressbar"
         aria-valuenow={step}

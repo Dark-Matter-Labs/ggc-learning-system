@@ -3,23 +3,19 @@
 :root {
   --nav-height: 49px;
 
-  /* Semantic backgrounds — xCO paper register */
-  --color-bg: #FFFFFF;
-  --color-bg-elevated: #FFFFFF;
-  --color-bg-subtle: #F7F6F2;
-
-  /* Semantic text — xCO ink register */
-  --color-text-primary: #1C1B17;
-  --color-text-secondary: #5F5C53;
-  --color-text-tertiary: #8C8980;
-
-  /* Borders — ink at 12 / 24 % opacity */
-  --color-border: rgba(28, 27, 23, 0.12);
-  --color-border-strong: rgba(28, 27, 23, 0.24);
+  /* Dark theme is the fixed default — no OS-preference switching */
+  --color-bg: #1C1B17;
+  --color-bg-elevated: #252420;
+  --color-bg-subtle: #201F1B;
+  --color-text-primary: #F5F4EF;
+  --color-text-secondary: #B8B5AE;
+  --color-text-tertiary: #7A7872;
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-border-strong: rgba(255, 255, 255, 0.20);
 
   /* Legacy vars kept for compatibility */
-  --background: #FFFFFF;
-  --foreground: #1C1B17;
+  --background: #1C1B17;
+  --foreground: #F5F4EF;
 
   /* xCO design tokens */
   --color-xco-paper:     #FFFFFF;
@@ -30,36 +26,6 @@
   --color-xco-teal:      #3786A6;
   --color-xco-sand:      #F2B077;
   --color-xco-dusk:      #F27F3D;
-}
-
-/* CSS-native dark mode: runs before JS, prevents flash of white on dark-mode systems */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #1C1B17;
-    --color-bg-elevated: #252420;
-    --color-bg-subtle: #201F1B;
-    --color-text-primary: #F5F4EF;
-    --color-text-secondary: #B8B5AE;
-    --color-text-tertiary: #7A7872;
-    --color-border: rgba(255, 255, 255, 0.10);
-    --color-border-strong: rgba(255, 255, 255, 0.20);
-    --background: #1C1B17;
-    --foreground: #F5F4EF;
-  }
-}
-
-.dark {
-  /* JS class overrides — same values, ensures consistency when class is present */
-  --color-bg: #1C1B17;
-  --color-bg-elevated: #252420;
-  --color-bg-subtle: #201F1B;
-  --color-text-primary: #F5F4EF;
-  --color-text-secondary: #B8B5AE;
-  --color-text-tertiary: #7A7872;
-  --color-border: rgba(255, 255, 255, 0.10);
-  --color-border-strong: rgba(255, 255, 255, 0.20);
-  --background: #1C1B17;
-  --foreground: #F5F4EF;
 }
 
 @theme inline {
