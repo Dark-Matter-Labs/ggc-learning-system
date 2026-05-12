@@ -259,17 +259,19 @@ export default function ReviewPage() {
           </div>
         </div>
       ) : (
-        {promoteError && (
-          <p className="mb-4 text-sm text-red-400 bg-red-950/20 border border-red-900/30 rounded px-3 py-2">
-            {promoteError}
-          </p>
-        )}
-        <SimpleReviewClient
-          node={node}
-          onPromote={handlePromote}
-          onArchive={handleArchive}
-          isSubmitting={isSubmitting}
-        />
+        <>
+          {promoteError && (
+            <p className="mb-4 text-sm text-red-400 bg-red-950/20 border border-red-900/30 rounded px-3 py-2">
+              {promoteError}
+            </p>
+          )}
+          <SimpleReviewClient
+            node={node}
+            onPromote={handlePromote}
+            onArchive={handleArchive}
+            isSubmitting={isSubmitting}
+          />
+        </>
       )}
     </div>
   );
