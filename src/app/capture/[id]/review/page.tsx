@@ -86,7 +86,7 @@ export default function ReviewPage() {
         .eq('id', nodeId);
       if (updateError) throw updateError;
 
-      // Auto-accept all LLM-suggested connections
+      // Auto-accept all LLM-suggested connections (upsert — edges may already exist from processing)
       const suggested = node?.llm_extraction?.suggested_connections ?? [];
       if (suggested.length > 0) {
         const { data: allNodes } = await supabase
@@ -103,13 +103,15 @@ export default function ReviewPage() {
             })
             .filter((e): e is NonNullable<typeof e> => e !== null);
           if (edges.length > 0) {
-            const { error: edgesError } = await supabase.from('edges').insert(edges);
+            const { error: edgesError } = await supabase
+              .from('edges')
+              .upsert(edges, { onConflict: 'source_id,target_id,edge_type', ignoreDuplicates: true });
             if (edgesError) throw edgesError;
           }
         }
       }
 
-      // Auto-accept all goal relevance suggestions
+      // Auto-accept all goal relevance suggestions (upsert — edges may already exist)
       const goalRelevance = node?.llm_extraction?.goal_relevance ?? [];
       if (goalRelevance.length > 0) {
         const goalEdges = goalRelevance.map(gr => ({
@@ -118,16 +120,18 @@ export default function ReviewPage() {
           edge_type: 'targets_outcome',
           weight: 1,
         }));
-        const { error: goalEdgesError } = await supabase.from('edges').insert(goalEdges);
+        const { error: goalEdgesError } = await supabase
+          .from('edges')
+          .upsert(goalEdges, { onConflict: 'source_id,target_id,edge_type', ignoreDuplicates: true });
         if (goalEdgesError) throw goalEdgesError;
       }
 
-      const { error: activityError } = await supabase.from('activity_log').insert({
+      await supabase.from('activity_log').insert({
+        actor_id: node?.author_id ?? '',
         action: 'promoted',
         target_node_id: nodeId,
         details: { from_status: node?.status },
       });
-      if (activityError) throw activityError;
 
       router.push('/capture');
     } finally {
