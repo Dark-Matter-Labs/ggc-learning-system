@@ -169,7 +169,7 @@ export function CommitmentsClient({
     const nodeRes = await fetch('/api/graph/nodes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, node_type: 'trigger_outcome', status: 'promoted' }),
+      body: JSON.stringify({ title, node_type: 'outcome', status: 'promoted' }),
     });
     if (!nodeRes.ok) throw new Error('Failed to create outcome');
     const { data: newOutcome } = await nodeRes.json() as { data: Node };

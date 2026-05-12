@@ -43,12 +43,12 @@ export async function POST(request: Request) {
       supabase
         .from('nodes')
         .select('id, title')
-        .eq('node_type', 'goal_space')
+        .eq('node_type', 'experiment')
         .neq('status', 'archived'),
       supabase
         .from('nodes')
         .select('id, title')
-        .eq('node_type', 'trigger_outcome')
+        .eq('node_type', 'outcome')
         .neq('status', 'archived'),
       supabase
         .from('nodes')

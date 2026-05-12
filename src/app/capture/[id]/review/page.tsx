@@ -42,6 +42,7 @@ export default function ReviewPage() {
   const [childNodes, setChildNodes] = useState<Node[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [promoteError, setPromoteError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNode = async () => {
@@ -66,6 +67,7 @@ export default function ReviewPage() {
 
   const handlePromote = async (note: string) => {
     setIsSubmitting(true);
+    setPromoteError(null);
     try {
       const supabase = createClient();
       const nodeId = params.id as string;
@@ -84,7 +86,7 @@ export default function ReviewPage() {
         .from('nodes')
         .update({ human_review: humanReview, status: 'promoted' })
         .eq('id', nodeId);
-      if (updateError) throw updateError;
+      if (updateError) throw new Error(`Status update failed: ${updateError.message}`);
 
       // Auto-accept all LLM-suggested connections (upsert — edges may already exist from processing)
       const suggested = node?.llm_extraction?.suggested_connections ?? [];
@@ -106,34 +108,45 @@ export default function ReviewPage() {
             const { error: edgesError } = await supabase
               .from('edges')
               .upsert(edges, { onConflict: 'source_id,target_id,edge_type', ignoreDuplicates: true });
-            if (edgesError) throw edgesError;
+            if (edgesError) throw new Error(`Edge insert failed: ${edgesError.message}`);
           }
         }
       }
 
-      // Auto-accept all goal relevance suggestions (upsert — edges may already exist)
+      // Auto-accept goal relevance suggestions — verify each outcome_id exists first
       const goalRelevance = node?.llm_extraction?.goal_relevance ?? [];
       if (goalRelevance.length > 0) {
-        const goalEdges = goalRelevance.map(gr => ({
-          source_id: nodeId,
-          target_id: gr.outcome_id,
-          edge_type: 'targets_outcome',
-          weight: 1,
-        }));
-        const { error: goalEdgesError } = await supabase
-          .from('edges')
-          .upsert(goalEdges, { onConflict: 'source_id,target_id,edge_type', ignoreDuplicates: true });
-        if (goalEdgesError) throw goalEdgesError;
+        const outcomeIds = goalRelevance.map(gr => gr.outcome_id).filter(Boolean);
+        if (outcomeIds.length > 0) {
+          const { data: validOutcomes } = await supabase
+            .from('nodes')
+            .select('id')
+            .in('id', outcomeIds);
+          const validIds = new Set((validOutcomes ?? []).map(n => n.id as string));
+          const goalEdges = goalRelevance
+            .filter(gr => validIds.has(gr.outcome_id))
+            .map(gr => ({ source_id: nodeId, target_id: gr.outcome_id, edge_type: 'targets_outcome', weight: 1 }));
+          if (goalEdges.length > 0) {
+            const { error: goalEdgesError } = await supabase
+              .from('edges')
+              .upsert(goalEdges, { onConflict: 'source_id,target_id,edge_type', ignoreDuplicates: true });
+            if (goalEdgesError) throw new Error(`Goal edge insert failed: ${goalEdgesError.message}`);
+          }
+        }
       }
 
-      await supabase.from('activity_log').insert({
-        actor_id: node?.author_id ?? '',
+      // Fire-and-forget activity log
+      supabase.from('activity_log').insert({
+        actor_id: node?.author_id ?? null,
         action: 'promoted',
         target_node_id: nodeId,
         details: { from_status: node?.status },
-      });
+      }).then(() => {});
 
-      router.push('/capture');
+      router.refresh();
+      router.push('/review');
+    } catch (err) {
+      setPromoteError(err instanceof Error ? err.message : 'Promote failed — try again');
     } finally {
       setIsSubmitting(false);
     }
@@ -246,6 +259,11 @@ export default function ReviewPage() {
           </div>
         </div>
       ) : (
+        {promoteError && (
+          <p className="mb-4 text-sm text-red-400 bg-red-950/20 border border-red-900/30 rounded px-3 py-2">
+            {promoteError}
+          </p>
+        )}
         <SimpleReviewClient
           node={node}
           onPromote={handlePromote}
