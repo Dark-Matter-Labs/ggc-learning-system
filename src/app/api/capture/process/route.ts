@@ -86,20 +86,22 @@ export async function POST(request: Request) {
     if (attachments.length > 0) {
       const attachment = attachments[0];
       const adminClient = createAdminClient();
-      const { data: fileData } = await adminClient.storage.from('attachments').download(attachment.storage_path);
+      const { data: fileData, error: downloadError } = await adminClient.storage.from('attachments').download(attachment.storage_path);
 
-      if (fileData) {
-        const arrayBuffer = await fileData.arrayBuffer();
+      if (downloadError || !fileData) {
+        throw new Error('Could not read the uploaded file. Please try uploading again.');
+      }
 
-        if (attachment.mime_type === 'text/plain') {
-          attachmentContent = { type: 'text', textContent: new TextDecoder().decode(arrayBuffer) };
-        } else if (attachment.mime_type === 'application/pdf') {
-          attachmentContent = { type: 'pdf', base64: Buffer.from(arrayBuffer).toString('base64') };
-        } else if (attachment.mime_type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-          const mammoth = await import('mammoth');
-          const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) });
-          attachmentContent = { type: 'text', textContent: result.value };
-        }
+      const arrayBuffer = await fileData.arrayBuffer();
+
+      if (attachment.mime_type === 'text/plain') {
+        attachmentContent = { type: 'text', textContent: new TextDecoder().decode(arrayBuffer) };
+      } else if (attachment.mime_type === 'application/pdf') {
+        attachmentContent = { type: 'pdf', base64: Buffer.from(arrayBuffer).toString('base64') };
+      } else if (attachment.mime_type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) });
+        attachmentContent = { type: 'text', textContent: result.value };
       }
     }
 
@@ -173,12 +175,31 @@ export async function POST(request: Request) {
       });
     } else if (hasAttachments || hasLongContent) {
       // Document multi-node extraction (attachments or long text)
-      const documentExtraction = await runDocumentExtraction(
-        node.title,
-        node.description ?? '',
-        attachmentContent,
-        goalContext,
-      );
+      let documentExtraction;
+      try {
+        documentExtraction = await runDocumentExtraction(
+          node.title,
+          node.description ?? '',
+          attachmentContent,
+          goalContext,
+        );
+      } catch (err) {
+        if (err instanceof Error && err.message === 'PDF_UNREADABLE' && attachmentContent?.type === 'pdf') {
+          if (node.description?.trim()) {
+            // Retry using only the submitter's description
+            documentExtraction = await runDocumentExtraction(
+              node.title,
+              node.description,
+              undefined,
+              goalContext,
+            );
+          } else {
+            throw new Error('This PDF could not be read. Add a description when uploading, or use a text-based PDF.');
+          }
+        } else {
+          throw err;
+        }
+      }
 
       const titleUpdate = node.title === '' ? { title: documentExtraction.document_title } : {};
 

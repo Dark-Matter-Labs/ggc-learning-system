@@ -22,7 +22,7 @@ Given a meeting transcript or notes, extract MULTIPLE distinct nodes from the co
   "meeting_summary": "2-3 sentence summary of the meeting",
   "extracted_nodes": [
     {
-      "node_type": "hunch|learning|commitment|signal|option|test",
+      "node_type": "${LLM_NODE_TYPE_ENUM}",
       "title": "Concise title (max 10 words)",
       "summary": "2-3 sentence description of this specific insight/action/decision",
       "category": "insight|action|decision|person_mention|open_question",
@@ -192,8 +192,12 @@ export function parseExtractionResponse(content: string): LlmExtraction {
   let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
-  } catch {
-    // LLM returned natural language instead of JSON — likely a PDF it cannot read
+  } catch (err) {
+    // If the string starts with `{` it's truncated JSON (token limit hit), not a PDF issue
+    if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
+      throw new Error('Extraction response was cut off — the document may be too long. Try splitting it into smaller sections.');
+    }
+    // LLM returned natural language — likely a PDF it cannot read
     throw new Error('PDF_UNREADABLE');
   }
 
@@ -270,14 +274,22 @@ export function buildMeetingExtractionPrompt(
 
 export function parseMeetingExtractionResponse(content: string): MeetingExtraction {
   const cleaned = content.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-  const parsed = JSON.parse(cleaned);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
+      throw new Error('Extraction response was cut off — the transcript may be too long. Try trimming it.');
+    }
+    throw new Error('PDF_UNREADABLE');
+  }
   const required = ['meeting_title', 'meeting_summary', 'extracted_nodes'];
   for (const field of required) {
-    if (!(field in parsed)) {
+    if (!(field in (parsed as Record<string, unknown>))) {
       throw new Error(`Missing required field: ${field}`);
     }
   }
-  if (!Array.isArray(parsed.extracted_nodes) || parsed.extracted_nodes.length === 0) {
+  if (!Array.isArray((parsed as Record<string, unknown>).extracted_nodes) || ((parsed as Record<string, unknown[]>).extracted_nodes).length === 0) {
     throw new Error('extracted_nodes must be a non-empty array');
   }
   return parsed as MeetingExtraction;
@@ -347,12 +359,20 @@ export function buildDocumentExtractionPrompt(
 
 export function parseDocumentExtractionResponse(content: string): DocumentExtraction {
   const cleaned = content.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-  const parsed = JSON.parse(cleaned);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
+      throw new Error('Extraction response was cut off — the document may be too long. Try splitting it into smaller sections.');
+    }
+    throw new Error('PDF_UNREADABLE');
+  }
   const required = ['document_title', 'document_summary', 'extracted_nodes'];
   for (const field of required) {
-    if (!(field in parsed)) throw new Error(`Missing required field: ${field}`);
+    if (!(field in (parsed as Record<string, unknown>))) throw new Error(`Missing required field: ${field}`);
   }
-  if (!Array.isArray(parsed.extracted_nodes) || parsed.extracted_nodes.length === 0) {
+  if (!Array.isArray((parsed as Record<string, unknown>).extracted_nodes) || ((parsed as Record<string, unknown[]>).extracted_nodes).length === 0) {
     throw new Error('extracted_nodes must be a non-empty array');
   }
   return parsed as DocumentExtraction;
