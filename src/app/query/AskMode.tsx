@@ -4,6 +4,7 @@ import { useState, useRef, useMemo } from 'react';
 import type { Node } from '@/lib/types/nodes';
 import { NodeCard } from './NodeCard';
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget';
+import { Spinner } from '@/components/shared/Spinner';
 
 interface Message {
   readonly id: number;
@@ -182,9 +183,18 @@ export function AskMode({ allNodes }: AskModeProps) {
               ) : (
                 <div>
                   <div className="text-sm text-cof-text-secondary leading-relaxed whitespace-pre-wrap">
-                    {msg.content}
-                    {isStreaming && msg.id === messages[messages.length - 1]?.id && (
-                      <span className="animate-pulse">▋</span>
+                    {isStreaming && msg.id === messages[messages.length - 1]?.id && !msg.content ? (
+                      <span className="flex items-center gap-1.5 text-cof-text-tertiary">
+                        <Spinner size="sm" />
+                        <span>Thinking…</span>
+                      </span>
+                    ) : (
+                      <>
+                        {msg.content}
+                        {isStreaming && msg.id === messages[messages.length - 1]?.id && (
+                          <span className="animate-pulse">▋</span>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -271,9 +281,10 @@ export function AskMode({ allNodes }: AskModeProps) {
           <button
             type="submit"
             disabled={isStreaming || !input.trim()}
-            className="px-4 py-2 text-sm bg-node-hunch text-white rounded-lg disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-node-hunch text-white rounded-lg disabled:opacity-50 hover:opacity-90 transition-opacity"
           >
-            {isStreaming ? '…' : 'Ask'}
+            {isStreaming && <Spinner size="sm" />}
+            {isStreaming ? 'Asking…' : 'Ask'}
           </button>
         </form>
       </div>

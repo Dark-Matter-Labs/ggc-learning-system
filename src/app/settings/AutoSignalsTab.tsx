@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Spinner } from '@/components/shared/Spinner';
 
 interface SignalSource {
   readonly id: string;
@@ -52,7 +53,12 @@ export function AutoSignalsTab() {
       .finally(() => setScanning(false));
   };
 
-  if (loading) return <p className="text-sm text-gray-400">Loading…</p>;
+  if (loading) return (
+    <div className="flex items-center gap-2 text-sm text-gray-400">
+      <Spinner size="sm" />
+      <span>Loading…</span>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -67,8 +73,9 @@ export function AutoSignalsTab() {
           type="button"
           onClick={runScan}
           disabled={scanning}
-          className="px-3 py-1.5 text-xs bg-node-hunch text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-node-hunch text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
+          {scanning && <Spinner size="sm" />}
           {scanning ? 'Scanning…' : 'Run scan now'}
         </button>
       </div>

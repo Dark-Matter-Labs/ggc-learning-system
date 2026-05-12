@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Spinner } from '@/components/shared/Spinner';
 
 interface RelinkResult {
   nodes_processed: number;
@@ -44,8 +45,9 @@ export function RelinkTab() {
         type="button"
         onClick={() => { void handleRelink(); }}
         disabled={isRunning}
-        className="text-xs px-3 py-1.5 bg-[#185FA5] text-white rounded-md disabled:opacity-50"
+        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#185FA5] text-white rounded-md disabled:opacity-50"
       >
+        {isRunning && <Spinner size="sm" />}
         {isRunning ? 'Running — this may take a few minutes…' : 'Re-link graph'}
       </button>
       {result && (

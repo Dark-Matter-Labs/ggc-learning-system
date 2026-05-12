@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Spinner } from '@/components/shared/Spinner';
 
 interface NodeSummary {
   readonly id: string;
@@ -64,7 +65,12 @@ export function DistillationTab() {
       .finally(() => setActing(null));
   };
 
-  if (loading) return <p className="text-sm text-cof-text-tertiary">Loading…</p>;
+  if (loading) return (
+    <div className="flex items-center gap-2 text-sm text-cof-text-tertiary">
+      <Spinner size="sm" />
+      <span>Loading…</span>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -79,8 +85,9 @@ export function DistillationTab() {
           type="button"
           onClick={runDistillation}
           disabled={running}
-          className="px-3 py-1.5 text-xs bg-node-hunch text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-node-hunch text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
+          {running && <Spinner size="sm" />}
           {running ? 'Scanning…' : 'Run distillation'}
         </button>
       </div>
