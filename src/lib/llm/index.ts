@@ -28,6 +28,7 @@ const AGENT_DEFAULT_MODELS: Record<string, string> = {
   extraction: 'claude-haiku-4-5-20251001',
   review: 'claude-haiku-4-5-20251001',
   process: 'claude-haiku-4-5-20251001',
+  relink: 'claude-haiku-4-5-20251001',
   reflection: 'claude-sonnet-4-6',
   create: 'claude-sonnet-4-6',
   setup: 'claude-sonnet-4-6',
@@ -38,7 +39,7 @@ const AGENT_DEFAULT_MODELS: Record<string, string> = {
   correction: 'claude-sonnet-4-6',
 };
 
-export type AgentName = 'extraction' | 'review' | 'create' | 'reflection' | 'process' | 'setup' | 'query' | 'digest' | 'portfolio' | 'newsletter' | 'correction';
+export type AgentName = 'extraction' | 'review' | 'create' | 'reflection' | 'process' | 'setup' | 'query' | 'digest' | 'portfolio' | 'newsletter' | 'correction' | 'relink';
 
 function getAgentConfig(agent: AgentName): LLMConfig {
   const prefix = agent.toUpperCase();

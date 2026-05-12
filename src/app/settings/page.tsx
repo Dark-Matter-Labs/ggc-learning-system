@@ -7,6 +7,7 @@ import type { EdgeType } from '@/lib/types/edges';
 import { UsageTab } from './UsageTab';
 import { AutoSignalsTab } from './AutoSignalsTab';
 import { DistillationTab } from './DistillationTab';
+import { RelinkTab } from './RelinkTab';
 
 export default function SettingsPage() {
   const [nodeTypes, setNodeTypes] = useState<NodeType[]>([]);
@@ -99,6 +100,12 @@ export default function SettingsPage() {
       <section className="mt-8">
         <h2 className="text-base font-semibold text-cof-text-primary mb-4">Distillation</h2>
         <DistillationTab />
+      </section>
+
+      {/* Graph re-link */}
+      <section className="mt-8">
+        <h2 className="text-base font-semibold text-cof-text-primary mb-4">Graph connections</h2>
+        <RelinkTab />
       </section>
     </div></div>
   );
