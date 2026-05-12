@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { SimpleReviewClient } from '@/components/review/SimpleReviewClient';
 import { StatusBadge } from '@/components/shared/StatusBadge';
+import { dispatchReviewCountStale } from '@/components/layout/ReviewCountBadge';
 import type { Node, HumanReview } from '@/lib/types/nodes';
 
 const STOP_WORDS = new Set(['the', 'a', 'an', 'of', 'in', 'to', 'and', 'for', 'is', 'as', 'on', 'by', 'at', 'or', 'not']);
@@ -143,6 +144,7 @@ export default function ReviewPage() {
         details: { from_status: node?.status },
       }).then(() => {});
 
+      dispatchReviewCountStale();
       router.refresh();
       router.push('/review');
     } catch (err) {
@@ -163,6 +165,7 @@ export default function ReviewPage() {
         target_node_id: params.id as string,
       });
       if (activityError) throw activityError;
+      dispatchReviewCountStale();
       router.push('/capture');
     } finally {
       setIsSubmitting(false);

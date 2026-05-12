@@ -7,6 +7,7 @@ import type { TensionAlert } from '@/lib/types/tension';
 import type { FilterOption } from '@/lib/types/filter';
 import { FlaggedItem } from '@/components/review/FlaggedItem';
 import { ReflectionSection } from '@/components/review/ReflectionSection';
+import { dispatchReviewCountStale } from '@/components/layout/ReviewCountBadge';
 
 interface SystemHealthClientProps {
   readonly flagged: readonly Node[];
@@ -43,6 +44,7 @@ export function SystemHealthClient({
       });
       if (res.ok) {
         setFlagged(prev => prev.filter(n => n.id !== id));
+        dispatchReviewCountStale();
       } else {
         setItemErrors(prev => ({ ...prev, [id]: 'Failed to accept — try again' }));
       }
@@ -60,6 +62,7 @@ export function SystemHealthClient({
       });
       if (res.ok) {
         setFlagged(prev => prev.filter(n => n.id !== id));
+        dispatchReviewCountStale();
       } else {
         setItemErrors(prev => ({ ...prev, [id]: 'Failed to archive — try again' }));
       }

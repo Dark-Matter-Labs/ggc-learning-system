@@ -4,6 +4,7 @@ import { useAuth } from './AuthProvider';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { ReviewCountBadge } from './ReviewCountBadge';
 
 interface NavBarProps {
   readonly reviewCount: number;
@@ -61,14 +62,7 @@ export function NavBar({ reviewCount }: NavBarProps) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {reviewCount > 0 && (
-          <Link
-            href="/review"
-            className="bg-node-assumption-fg text-white text-xs px-2.5 py-0.5 rounded-full"
-          >
-            {reviewCount} awaiting review
-          </Link>
-        )}
+        <ReviewCountBadge initialCount={reviewCount} />
         <button
           onClick={handleSignOut}
           className="w-7 h-7 rounded-full bg-cof-bg-subtle flex items-center justify-center text-xs text-cof-text-secondary hover:bg-cof-border transition-colors"
