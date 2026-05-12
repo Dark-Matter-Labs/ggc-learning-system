@@ -297,20 +297,20 @@ export function parseMeetingExtractionResponse(content: string): MeetingExtracti
 
 const DOCUMENT_SYSTEM_PROMPT = `You are an extraction system for ${ORG_CONTEXT}.
 
-Given a document, long note, or rich text capture, extract MULTIPLE distinct nodes. Return ONLY valid JSON:
+Given a document, extract the most important distinct nodes. Return ONLY valid JSON — no prose, no markdown:
 
 {
-  "document_title": "Concise document title (max 10 words)",
-  "document_summary": "2-3 sentence summary of the content",
+  "document_title": "Concise title (max 8 words)",
+  "document_summary": "1-2 sentence summary",
   "extracted_nodes": [
     {
       "node_type": "${LLM_NODE_TYPE_ENUM}",
-      "title": "Concise title (max 10 words)",
-      "summary": "2-3 sentence description of this specific insight, claim, or idea",
+      "title": "Concise title (max 8 words)",
+      "summary": "1-2 sentence description",
       "confidence_level": 1-5,
-      "domain_tags": ["relevant", "tags"],
+      "domain_tags": ["tag"],
       "suggested_connections": [
-        { "target_title": "exact title of a related node", "edge_type": "supports|contradicts|requires|evolved_from|challenges|tested_by", "rationale": "why connected" }
+        { "target_title": "exact title", "edge_type": "supports|contradicts|requires|evolved_from|challenges|tested_by", "rationale": "brief reason" }
       ]
     }
   ]
@@ -320,16 +320,13 @@ Node type rules:
 ${LLM_NODE_TYPE_DESCRIPTIONS}
 
 Domain tags: ${LLM_DOMAIN_TAGS_LIST}
-
-confidence_level: 1=vague mention, 2=discussed briefly, 3=discussed in detail, 4=agreed upon, 5=committed to
+confidence_level: 1=vague, 2=brief, 3=detailed, 4=agreed, 5=committed
 
 Rules:
-1. Extract distinct insights, claims, arguments, and questions as separate nodes. Maximum 20 nodes total.
-2. A dense 500-word note typically produces 3-8 nodes. A long document 8-15.
-3. Prioritise the most important and distinct nodes. Merge closely related points.
-4. Each node must stand alone with enough context to be understood without the full document.
-5. Mark uncertain extractions appropriately. All outputs are suggestions for human review.
-6. In suggested_connections, you may reference: (a) other nodes you extracted from this document — use the exact title you gave them, and (b) any existing graph nodes listed in the prompt. Omit the field if no strong connections exist.`;
+1. Maximum 12 nodes. Prioritise the most distinct and important. Merge closely related points.
+2. Keep summaries to 1-2 sentences only. Be concise.
+3. Omit suggested_connections if no strong connection exists.
+4. Output complete valid JSON. Do not truncate.`;
 
 export function buildDocumentExtractionPrompt(
   title: string,
@@ -357,6 +354,43 @@ export function buildDocumentExtractionPrompt(
   return base;
 }
 
+function rescuePartialDocumentExtraction(partial: string): DocumentExtraction | null {
+  try {
+    const titleMatch = partial.match(/"document_title"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    const summaryMatch = partial.match(/"document_summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    const nodesStart = partial.indexOf('"extracted_nodes"');
+    if (!titleMatch || nodesStart === -1) return null;
+
+    const arrayStart = partial.indexOf('[', nodesStart);
+    if (arrayStart === -1) return null;
+
+    const nodes: unknown[] = [];
+    let pos = arrayStart + 1;
+    while (pos < partial.length) {
+      const objStart = partial.indexOf('{', pos);
+      if (objStart === -1) break;
+      let depth = 0;
+      let objEnd = -1;
+      for (let i = objStart; i < partial.length; i++) {
+        if (partial[i] === '{') depth++;
+        else if (partial[i] === '}') { depth--; if (depth === 0) { objEnd = i; break; } }
+      }
+      if (objEnd === -1) break; // incomplete object — stop
+      try {
+        nodes.push(JSON.parse(partial.slice(objStart, objEnd + 1)));
+        pos = objEnd + 1;
+      } catch { break; }
+    }
+
+    if (nodes.length === 0) return null;
+    return {
+      document_title: titleMatch[1],
+      document_summary: summaryMatch?.[1] ?? titleMatch[1],
+      extracted_nodes: nodes,
+    } as DocumentExtraction;
+  } catch { return null; }
+}
+
 export function parseDocumentExtractionResponse(content: string): DocumentExtraction {
   const cleaned = content.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
   let parsed: unknown;
@@ -364,6 +398,9 @@ export function parseDocumentExtractionResponse(content: string): DocumentExtrac
     parsed = JSON.parse(cleaned);
   } catch {
     if (cleaned.startsWith('{') || cleaned.startsWith('[')) {
+      // Response was cut off — try to rescue any complete nodes already extracted
+      const rescued = rescuePartialDocumentExtraction(cleaned);
+      if (rescued) return rescued;
       throw new Error('Extraction response was cut off — the document may be too long. Try splitting it into smaller sections.');
     }
     throw new Error('PDF_UNREADABLE');
