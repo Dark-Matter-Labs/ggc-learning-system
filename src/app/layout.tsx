@@ -27,8 +27,8 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'xCO',
-  description: 'Expanding Civilisational Optionality — knowledge system by Dark Matter Labs',
+  title: 'Dm Governance Gap',
+  description: 'Governance Gap knowledge system by Dark Matter Labs',
 };
 
 export default async function RootLayout({

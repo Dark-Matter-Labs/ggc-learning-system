@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 type NodeRow = { id: string; title: string; node_type: string; description: string | null };
 
 const SYSTEM_PROMPT = (label: string) =>
-  `You are a strategic analyst for the xCO (Expanding Civilisational Optionality). ` +
+  `You are a strategic analyst for Dm Governance Gap (Dark Matter Labs). ` +
   `You are running a focused knowledge graph reflection on: "${label}". ` +
   `Return a synthesis answering the provided questions. Be direct and specific. Use plain language.`;
 
