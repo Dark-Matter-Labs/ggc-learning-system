@@ -90,6 +90,11 @@ export default function ReviewPage() {
       if (updateError) throw new Error(`Status update failed: ${updateError.message}`);
 
       // Auto-accept all LLM-suggested connections (upsert — edges may already exist from processing)
+      const VALID_EDGE_TYPES = new Set([
+        'supports', 'contradicts', 'requires', 'evolved_from', 'tested_by',
+        'produced', 'connected_to', 'works_at', 'authored_by', 'challenges',
+        'advances_goal', 'targets_outcome', 'indicates_progress', 'assigned_to_outcome',
+      ]);
       const suggested = node?.llm_extraction?.suggested_connections ?? [];
       if (suggested.length > 0) {
         const { data: allNodes } = await supabase
@@ -102,6 +107,7 @@ export default function ReviewPage() {
             .map(conn => {
               const target = findBestMatch(conn.target_title, allNodes);
               if (!target) return null;
+              if (!VALID_EDGE_TYPES.has(conn.edge_type)) return null;
               return { source_id: nodeId, target_id: target.id, edge_type: conn.edge_type, weight: 1 };
             })
             .filter((e): e is NonNullable<typeof e> => e !== null);
@@ -109,12 +115,14 @@ export default function ReviewPage() {
             const { error: edgesError } = await supabase
               .from('edges')
               .upsert(edges, { onConflict: 'source_id,target_id,edge_type', ignoreDuplicates: true });
-            if (edgesError) throw new Error(`Edge insert failed: ${edgesError.message}`);
+            if (edgesError) {
+              console.error(`[review/promote] Edge insert failed for node ${nodeId}:`, edgesError.message);
+            }
           }
         }
       }
 
-      // Auto-accept goal relevance suggestions — verify each outcome_id exists first
+      // Auto-accept goal relevance suggestions — non-fatal if edge type not in database
       const goalRelevance = node?.llm_extraction?.goal_relevance ?? [];
       if (goalRelevance.length > 0) {
         const outcomeIds = goalRelevance.map(gr => gr.outcome_id).filter(Boolean);
@@ -131,7 +139,9 @@ export default function ReviewPage() {
             const { error: goalEdgesError } = await supabase
               .from('edges')
               .upsert(goalEdges, { onConflict: 'source_id,target_id,edge_type', ignoreDuplicates: true });
-            if (goalEdgesError) throw new Error(`Goal edge insert failed: ${goalEdgesError.message}`);
+            if (goalEdgesError) {
+              console.error(`[review/promote] Goal edge insert failed for node ${nodeId}:`, goalEdgesError.message);
+            }
           }
         }
       }
@@ -273,6 +283,7 @@ export default function ReviewPage() {
             onPromote={handlePromote}
             onArchive={handleArchive}
             isSubmitting={isSubmitting}
+            onNodeUpdate={updates => setNode(prev => prev ? { ...prev, ...updates } : prev)}
           />
         </>
       )}

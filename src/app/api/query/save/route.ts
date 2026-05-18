@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const SaveSchema = z.object({
   title: z.string().trim().min(1).max(300),
-  content: z.string().min(1).max(10000),
+  content: z.string().min(1).max(50000),
   node_type: z.enum(['hunch', 'learning']),
   context_node_ids: z.array(z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)).max(50).default([]),
 });
