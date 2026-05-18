@@ -64,7 +64,7 @@ export default async function DashboardPage() {
       .neq('status', 'archived').neq('status', 'falsified').neq('status', 'suspended')
       .lt('updated_at', tenDaysAgo).limit(3),
     supabase.from('nodes').select('id', { count: 'exact', head: true })
-      .in('status', ['raw', 'llm_reviewed']).gte('created_at', sevenDaysAgo),
+      .in('status', ['raw', 'processing']).gte('created_at', sevenDaysAgo),
     supabase.from('nodes').select('id, title').eq('node_type', 'goal_space').neq('status', 'archived'),
     supabase.from('convergence_snapshots' as string).select('goal_space_id, score, computed_at')
       .order('computed_at', { ascending: false }).limit(200),
