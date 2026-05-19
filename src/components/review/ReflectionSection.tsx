@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { FilterOption } from '@/lib/types/filter';
+import { MarkdownContent } from '@/components/shared/MarkdownContent';
 
 interface ReflectionSectionProps {
   readonly sites: readonly FilterOption[];
@@ -133,9 +134,7 @@ export function ReflectionSection({ sites, options, goalSpaces }: ReflectionSect
           <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-2">
             {filterLabel}
           </p>
-          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-            {synthesis}
-          </p>
+          <MarkdownContent content={synthesis} />
         </div>
       )}
     </section>
