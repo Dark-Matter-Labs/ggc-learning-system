@@ -6,6 +6,7 @@ const ALLOWED_TYPES = new Set([
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
+  'text/markdown',
 ]);
 
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -14,6 +15,7 @@ const EXT_MAP: Record<string, string> = {
   'application/pdf': 'pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
   'text/plain': 'txt',
+  'text/markdown': 'md',
 };
 
 export async function POST(request: Request) {
@@ -35,12 +37,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
 
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return NextResponse.json({ error: 'Only PDF, DOCX, and TXT files are supported' }, { status: 400 });
+  const actualExt = file.name.split('.').pop()?.toLowerCase() ?? '';
+
+  // Browsers often report .md files as text/plain — normalise before validation.
+  const mimeType = (file.type === 'text/plain' && actualExt === 'md') ? 'text/markdown' : file.type;
+
+  if (!ALLOWED_TYPES.has(mimeType)) {
+    return NextResponse.json({ error: 'Only PDF, DOCX, TXT, and MD files are supported' }, { status: 400 });
   }
 
-  const expectedExt = EXT_MAP[file.type];
-  const actualExt = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const expectedExt = EXT_MAP[mimeType];
   if (actualExt !== expectedExt) {
     return NextResponse.json({ error: 'File extension does not match file type' }, { status: 400 });
   }
@@ -51,14 +57,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'File must be under 10MB' }, { status: 400 });
   }
 
-  const ext = EXT_MAP[file.type];
+  const ext = EXT_MAP[mimeType];
   const storage_path = `${user.id}/${crypto.randomUUID()}.${ext}`;
   const arrayBuffer = await file.arrayBuffer();
 
   const adminClient = createAdminClient();
   const { error: uploadError } = await adminClient.storage
     .from('attachments')
-    .upload(storage_path, arrayBuffer, { contentType: file.type, upsert: false });
+    .upload(storage_path, arrayBuffer, { contentType: mimeType, upsert: false });
 
   if (uploadError) {
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
@@ -67,7 +73,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     storage_path,
     filename: safeFilename,
-    mime_type: file.type,
+    mime_type: mimeType,
     size: file.size,
   });
 }
